@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "ostream": "cpp",
+        "array": "cpp",
+        "string_view": "cpp",
+        "iostream": "cpp",
+        "thread": "cpp",
+        "vector": "cpp",
+        "random": "cpp",
+        "mutex": "cpp",
+        "condition_variable": "cpp"
+    }
+}
