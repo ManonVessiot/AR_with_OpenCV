@@ -3,7 +3,7 @@
         {
             "name": "Ubuntu",
             "includePath": [
-                "/usr/local/include/opencv4 ",
+                "/usr/local/include/opencv4",
                 "${default}"
             ],
             "intelliSenseMode": "gcc-x64",
