@@ -63,6 +63,7 @@ int main( int argc, char **argv ){
     thread recordframeLockead(recordFrameForCalibration, numberOfInput, secondsBetweenFrame);
 
     recordframeLockead.join();
+    cout << "stop record" << endl;
     calib.calibrate();
 
     displayThread.join();
