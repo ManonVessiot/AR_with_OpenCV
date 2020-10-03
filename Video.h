@@ -4,13 +4,19 @@
 #include "opencv.h"
 
 class Video {
-    private:
+    protected:
         string windowsName;
         VideoCapture cap;
         Mat frame;
 
+
     public:
-        Video(){};
+        Mat cameraMatrix;
+        Mat distanceCoefficients;
+
+        bool running;
+
+        Video();
         Video(VideoCapture &_cap, string _windowsName);
         ~Video();
 
@@ -18,5 +24,6 @@ class Video {
         void updateFrame();
 
         string getWindowsName();
+        void setDefaultCalibration(double width, double height);
 };
 #endif

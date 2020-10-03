@@ -1,15 +1,20 @@
 #include "Video.h"
-#include "Calibration.h"
+#include "CalibrationProcess.h"
 #include "main.h"
 #include <thread>
+#include <X11/Xlib.h>   
 
 Video cam;
-Calibration calib;
+CalibrationProcess calib;
 
 mutex frameLock;
+mutex runningLock;
 
 void display()
 {
+    runningLock.lock(); // Thread Lock
+    cam.running = true;
+    runningLock.unlock(); // Thread unLock
     while (true)
     {
         frameLock.lock(); // Thread Lock
@@ -17,12 +22,16 @@ void display()
         cv::imshow(cam.getWindowsName(), cam.getFrame());
         frameLock.unlock(); // Thread unLock
         
-        if (waitKey(5) >= 0)
-            break; 
+        if (waitKey(5) >= 0){
+            break;
+        }
     }
+    runningLock.lock(); // Thread Lock
+    cam.running = false;
+    runningLock.unlock(); // Thread unLock
 }
 
-void recordFrameForCalibration(int numberOfInput, int secondsBetweenFrame)
+void recordFrameForCalibrationProcess(int numberOfInput, int secondsBetweenFrame)
 {
     int numberRecorded = 0;
     while (numberRecorded < numberOfInput)
@@ -30,11 +39,20 @@ void recordFrameForCalibration(int numberOfInput, int secondsBetweenFrame)
         sleep(secondsBetweenFrame);
         
         frameLock.lock(); // Thread Lock
-        if (calib.addInput(cam.getFrame())){
+        bool frameAdded = calib.addInput(cam.getFrame());
+        frameLock.unlock(); // Thread unLock
+        if (frameAdded){
             numberRecorded++;
             cout << numberRecorded << " input recorded" << endl;
         }
-        frameLock.unlock(); // Thread unLock
+        
+        runningLock.lock(); // Thread Lock
+        bool stop = !cam.running;
+        runningLock.unlock(); // Thread unLock
+
+        if (stop){
+            break;
+        }
     }
     cout << calib.inputSize() << " input recorded : DONE" << endl;
     
@@ -46,25 +64,28 @@ int main( int argc, char **argv ){
     int boardSize_Height = 6; // 6 or 6 or 4
     float square_Size = 0.025;
     Pattern calibrate_Pattern = CHESSBOARD; // CHESSBOARD or CIRCLES_GRID or ASYMMETRIC_CIRCLES_GRID
-    int numberOfInput = 5;
+    int numberOfInput = 30;
     int secondsBetweenFrame = 1;
 
-
-
+    string calibrationFile = "calibration.txt";
 
 
     VideoCapture cap(capIndex);
     cam = Video(cap, "Live");
-    calib = Calibration(boardSize_Width, boardSize_Height, square_Size, calibrate_Pattern);
+    calib = CalibrationProcess(boardSize_Width, boardSize_Height, square_Size, calibrate_Pattern);
+
+    // init for thread
+    XInitThreads();
 
     cout << "start display" << endl;
     thread displayThread(display);
     cout << "start record" << endl;
-    thread recordframeLockead(recordFrameForCalibration, numberOfInput, secondsBetweenFrame);
+    thread recordframeLockead(recordFrameForCalibrationProcess, numberOfInput, secondsBetweenFrame);
 
     recordframeLockead.join();
     cout << "stop record" << endl;
-    calib.calibrate();
+    calib.calibrate(cam.cameraMatrix, cam.distanceCoefficients);
+    calib.saveCalibration(calibrationFile);
 
     displayThread.join();
     cout << "stop display" << endl;

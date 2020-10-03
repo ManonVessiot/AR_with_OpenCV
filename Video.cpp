@@ -1,5 +1,9 @@
 #include "Video.h"
 
+Video::Video(){
+
+}
+
 Video::Video(VideoCapture &_cap, string _windowsName){
     cap = _cap;
     windowsName = _windowsName;
@@ -22,4 +26,17 @@ void Video::updateFrame(){
 
 string Video::getWindowsName(){
     return windowsName;
+}
+
+void Video::setDefaultCalibration(double width, double height){
+    cameraMatrix = Mat::zeros(3, 3, CV_64F);
+
+    cameraMatrix.at<double>(0, 0) = width;
+    cameraMatrix.at<double>(1, 1) = height;
+    cameraMatrix.at<double>(2, 2) = 1;
+
+    cameraMatrix.at<double>(0, 2) = width / 2.0;
+    cameraMatrix.at<double>(1, 2) = height / 2.0;
+
+    distanceCoefficients = Mat::zeros(8, 1, CV_64F);
 }
