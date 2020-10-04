@@ -4,6 +4,7 @@
             "name": "Ubuntu",
             "includePath": [
                 "/usr/local/include/opencv4",
+                "/usr/include/opencv4",
                 "${default}"
             ],
             "intelliSenseMode": "gcc-x64",

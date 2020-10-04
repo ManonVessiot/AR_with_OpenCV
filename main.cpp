@@ -118,6 +118,40 @@ bool loadCalibration(string calibrationFile){
     return false;
 }
 
+bool detectionArucoMarker(float arucoSquareDimention){
+    bool stop = false;
+
+    vector<int> markerIds;
+    Ptr<aruco::Dictionary> markerDictionary = aruco::getPredefinedDictionary(aruco::PREDEFINED_DICTIONARY_NAME::DICT_4X4_50);
+    vector<vector<Point2f>> markerCorners, rejectedCandidates;
+
+    vector<Vec3d> rotationVectors, translationVectors;
+
+    while (!stop){
+
+        frameLock.lock(); // Thread Lock
+        Mat frame = cam.getFrame();
+        frameLock.unlock(); // Thread unLock
+
+        aruco:: detectMarkers(frame, markerDictionary, markerCorners, markerIds);
+        aruco::estimatePoseSingleMarkers(markerCorners, arucoSquareDimention, cam.cameraMatrix, cam.distanceCoefficients,
+                                        rotationVectors, translationVectors);
+        
+        cout << "markerIds.size() : " << markerIds.size() << endl;
+        for (int i = 0; i < markerIds.size(); i++)
+        {
+            aruco::drawAxis(frame, cam.cameraMatrix, cam.distanceCoefficients, rotationVectors[i], translationVectors[i], 0.1f);            
+        }
+        imshow("markerAxis", frame);
+
+        runningLock.lock(); // Thread Lock
+        stop = !cam.running;
+        runningLock.unlock(); // Thread unLock
+    }
+
+    return true;
+}
+
 int main( int argc, char **argv ){
     // ./exc 0 0 9 6 0.025 0 30 1 calibration.txt Webcam
     if (argc < 10){
@@ -181,9 +215,12 @@ int main( int argc, char **argv ){
         cout << "saving calibration..." << endl;
         calibrationThread = thread(saveCalibration, numberOfInput, secondsBetweenFrame, calibrationFile);
     }
-    
-
     calibrationThread.join();
+
+    float arucoSquareDimention = 0.125f;
+    thread arucoMarkerThread(detectionArucoMarker, arucoSquareDimention);
+
+    arucoMarkerThread.join();
     displayThread.join();
 
     return 0;
