@@ -8,15 +8,15 @@ class Video {
         string windowsName;
         VideoCapture cap;
         Mat frame;
-        
-        int width;
-        int height;
 
 
     public:
         bool calibrated;
         Mat cameraMatrix;
         Mat distanceCoefficients;
+        
+        int width;
+        int height;
 
         bool running;
 

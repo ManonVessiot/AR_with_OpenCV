@@ -1,9 +1,4 @@
-#include "Video.h"
-#include "CalibrationProcess.h"
-#include "main.h"
-#include "opengl.h"
-#include <thread>
-#include <X11/Xlib.h>   
+#include "main.h"  
 
 Video cam;
 CalibrationProcess calib;
@@ -187,8 +182,8 @@ void printManual(){
     cout << "      -> Load Calibration = 0" << endl;
     cout << "      -> Save Calibration = 1" << endl;
     cout << "      -> Load and Detect Aruco Markers = 2" << endl;
-    cout << " --> calibrationFileName is the name of the file, where the calibration is saved" << endl;
     cout << " --> capIndex identify your webcam (0)" << endl;
+    cout << " --> calibrationFileName is the name of the file, where the calibration is saved" << endl;
     cout << " --> boardSize_Width, boardSize_Height is the size of your pattern (9, 6 ou 6, 6 ou 11, 4)" << endl;
     cout << " --> square_Size is the size of your pattern's square (0.025)" << endl;
     cout << " --> calibrate_Pattern is the type of pattern :" << endl;
@@ -200,20 +195,25 @@ void printManual(){
     cout << " --> arucoSquareDimention is is the size of the aruco's markers, which is a square (0.125)" << endl;
     cout << endl;
     cout << "Load Calibration = 0 : " << endl;
-    cout << "$ ./exc mode calibrationFileName capIndex" << endl;
-    cout << "$ ./exc 0 calibration.txt 0" << endl;
+    cout << "$ ./exc mode capIndex calibrationFileName" << endl;
+    cout << "$ ./exc 0 0 calibration.txt" << endl;
     cout << endl;
     cout << "Save Calibration = 1 : " << endl;
-    cout << "$ ./exc mode calibrationFileName capIndex boardSize_Width boardSize_Height square_Size calibrate_Pattern numberOfInput secondsBetweenFrame" << endl;
-    cout << "$ ./exc 1 calibration.txt 0 9 6 0.025 0 30 1" << endl;
+    cout << "$ ./exc mode capIndex calibrationFileName boardSize_Width boardSize_Height square_Size calibrate_Pattern numberOfInput secondsBetweenFrame" << endl;
+    cout << "$ ./exc 1 0 calibration.txt 9 6 0.025 0 30 1" << endl;
     cout << endl;
     cout << "Load and Detect Aruco Markers = 2 : " << endl;
-    cout << "$ ./exc mode calibrationFileName capIndex arucoSquareDimention" << endl;
-    cout << "$ ./exc 2 calibration.txt 0 0.125" << endl;
+    cout << "$ ./exc mode capIndex calibrationFileName arucoSquareDimention" << endl;
+    cout << "$ ./exc 2 0 calibration.txt 0.125" << endl;
+    cout << endl;
+    cout << "OpenGL = 3 : " << endl;
+    cout << "$ ./exc mode capIndex calibrationFileName" << endl;
+    cout << "$ ./exc 3 0 calibration.txt" << endl;
 
-    // ./exc 0 calibration.txt 0
-    // ./exc 1 calibration.txt 0 9 6 0.025 0 30 1
-    // ./exc 2 calibration.txt 0 0.125
+    // ./exc 0 0 calibration.txt
+    // ./exc 1 0 calibration.txt 9 6 0.025 0 30 1
+    // ./exc 2 0 calibration.txt 0.125
+    // ./exc 3 0
 }
 
 
@@ -222,54 +222,60 @@ void draw(){
     // TODO
     glClearColor(0.0, 0.0, 0.0, 1.0);
 
+    // GL_COLOR_BUFFER_BIT & GL_DEPTH_BUFFER_BIT & GL_ACCUM_BUFFER_BIT & GL_STENCIL_BUFFER_BIT
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    cam.updateFrame();
+    Mat frame = cam.getFrame();
+    
+    unsigned int data[frame.rows][frame.cols][3];
+    for( size_t y = 0; y <  frame.rows; y++ )
+    {
+        for( size_t x = 0; x < frame.cols; ++x )
+        {
+
+            Vec3b intensity = frame.at<Vec3b>(y,x);
+            //cout << intensity[0] << endl;
+              data[frame.rows - y - 1][x][0] =intensity[2]* 256 * 256 * 256;
+              data[frame.rows - y - 1][x][1] =intensity[1]* 256 * 256 * 256;
+              data[frame.rows - y - 1][x][2] =intensity[0]* 256 * 256 * 256;
+        }
+    }
+    glDrawPixels(frame.cols, frame.rows, GL_RGB, GL_UNSIGNED_INT, data);
+
+
+
+    // GL_MODELVIEW & GL_PROJECTION & GL_TEXTURE & GL_COLOR
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glPolygonMode(GL_BACK, GL_LINES);
-    //glCullFace(GL_BACK);
+    // glPolygonMode(GL_BACK, GL_LINES);
+    // glCullFace(GL_BACK);
 
-    gluLookAt(9,9,10,0,0,0,0,0,1);
+    gluLookAt(2, 2, 2, 0, 0, 0, 0, 0, 1);
 
     glPushMatrix();
-    
-    GLfloat Lposition2 [4] = {9.0, -9.0, 10.0, 1.0}; /* position “reelle” */
-    glLightfv (GL_LIGHT0, GL_POSITION, Lposition2);
 
-    GLfloat Lambiant [4] = {0.4, 0.4, 0.4, 1.0};
-    GLfloat Lblanche [4] = {1.0, 1.0, 1.0, 1.0};
-    glLightfv (GL_LIGHT0, GL_AMBIENT, Lambiant);
-    glLightfv (GL_LIGHT0, GL_DIFFUSE, Lblanche);
-    glLightfv (GL_LIGHT0, GL_SPECULAR, Lblanche);
-
+    // Repère spatial
+    glBegin(GL_LINES);
+        //x (vert)
+        glColor3f(0.0, 1.0, 0.0);
+        glVertex3d(-1.0, 0.0, 0.0);
+        glVertex3d(2.0, 0.0, 0.0);
+        //y (rouge)
+        glColor3f(1.0, 0.0, 0.0);
+        glVertex3d(0.0, -1.0, 0.0);
+        glVertex3d(0.0, 2.0, 0.0);
+        //z (bleu)
+        glColor3f(0.0, 0.0, 1.0);
+        glVertex3d(0.0, 0.0, -1.0);
+        glVertex3d(0.0, 0.0, 2.0);
+    glEnd();
 
     glPopMatrix();
 
-    glBegin(GL_LINES);
-        //repere
-        //x(rouge)
-        glColor3f(1.0, 0.0, 0.0);
-        glVertex3d(0.0, 0.0, 0.0);
-        glVertex3d(0.0, 5.0, 0.0);
-        //y(vert)
-        glColor3f(0.0, 1.0, 0.0);
-        glVertex3d(0.0, 0.0, 0.0);
-        glVertex3d(5.0, 0.0, 0.0);
-        //z(bleu)
-        glColor3f(0.0, 0.0, 1.0);
-        glVertex3d(0.0, 0.0, 0.0);
-        glVertex3d(0.0, 0.0, 5.0);
-    glEnd();
-
-    glColor3f(1.0, 1.0, 1.0);
-
-    GLUquadric* quadric = gluNewQuadric();
-
-    gluQuadricDrawStyle(quadric, GLU_FILL );
-    gluSphere(quadric , 4 , 36 , 18 );
-
-
     glutSwapBuffers();
+    glutPostRedisplay();
 }
 
 int main( int argc, char **argv ){
@@ -283,8 +289,8 @@ int main( int argc, char **argv ){
 
     if (argc >= 4){
         mode = atoi(argv[1]);
-        calibrationFile = argv[2];
-        capIndex = atoi(argv[3]);
+        capIndex = atoi(argv[2]);
+        calibrationFile = argv[3];
 
         // init for thread
         XInitThreads();
@@ -292,7 +298,7 @@ int main( int argc, char **argv ){
         cap = VideoCapture(capIndex);
         cam = Video(cap, windowsName);
 
-        if (mode == 0 || mode == 2){
+        if (mode == 0 || mode == 2 || mode == 3){
             // load calibration
             thread loadCalibrationThread(loadCalibration, calibrationFile);
             loadCalibrationThread.join();
@@ -322,6 +328,28 @@ int main( int argc, char **argv ){
                     cout << "mode 2 DONE" << endl;
                     return 0;
                 }
+            }
+            else if (mode == 3){
+                // TODO
+                glutInit(&argc, argv);
+                // GLUT_RGBA & GLUT_RGB & GLUT_INDEX & GLUT_SINGLE & GLUT_DOUBLE & GLUT_ACCUM &
+                // GLUT_ALPHA & GLUT_DEPTH & GLUT_STENCIL & GLUT_MULTISAMPLE & GLUT_STEREO & GLUT_LUMINANCE
+                glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+
+                glutInitWindowSize(cam.width, cam.height);
+                glutInitWindowPosition(1500, 100);
+
+                glutCreateWindow("OpenGL");
+
+                glMatrixMode(GL_PROJECTION);
+                gluPerspective(70, (double)cam.width / cam.height, 1, 1000);
+
+                glutDisplayFunc(draw);
+                glutMainLoop();
+                
+                cout << "mode 3 DONE" << endl;
+
+                return 0;
             }
             else
             {
@@ -356,29 +384,6 @@ int main( int argc, char **argv ){
                 return 0;
             }
         }
-    }
-    else if (argc >= 2 && atoi(argv[1]) == 3){
-        // TODO
-        glutInit(&argc, argv);
-        glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-
-        glutInitWindowSize(500, 500);
-        glutInitWindowPosition(100, 100);
-
-        glutCreateWindow("extrude test");
-
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_COLOR_MATERIAL);
-        glEnable(GL_LIGHTING);
-        glEnable(GL_LIGHT0);
-        glEnable(GL_NORMALIZE);
-
-        glMatrixMode( GL_PROJECTION );
-        glLoadIdentity();
-        gluPerspective(70,1,1,1000);
-        glutDisplayFunc(draw);
-        glutMainLoop();
-        return 0;
     }
     printManual();
     return -1;
