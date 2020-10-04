@@ -11,6 +11,7 @@ class Video {
 
 
     public:
+        bool calibrated;
         Mat cameraMatrix;
         Mat distanceCoefficients;
 
@@ -24,6 +25,6 @@ class Video {
         void updateFrame();
 
         string getWindowsName();
-        void setDefaultCalibration(double width, double height);
+        void setDefaultCalibration(int width, int height);
 };
 #endif

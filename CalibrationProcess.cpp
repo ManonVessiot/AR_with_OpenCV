@@ -110,7 +110,6 @@ bool CalibrationProcess::saveCalibration(string name){
                 outStream << value << endl;
             }            
         }
-
         outStream.close();
         return true;
     }

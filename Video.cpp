@@ -1,10 +1,11 @@
 #include "Video.h"
 
 Video::Video(){
-
+    calibrated = false;
 }
 
 Video::Video(VideoCapture &_cap, string _windowsName){
+    calibrated = false;
     cap = _cap;
     windowsName = _windowsName;
     if(!cap.isOpened()){  // check if we succeeded
@@ -28,7 +29,7 @@ string Video::getWindowsName(){
     return windowsName;
 }
 
-void Video::setDefaultCalibration(double width, double height){
+void Video::setDefaultCalibration(int width, int height){
     cameraMatrix = Mat::zeros(3, 3, CV_64F);
 
     cameraMatrix.at<double>(0, 0) = width;
