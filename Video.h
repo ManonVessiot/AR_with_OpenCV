@@ -8,6 +8,9 @@ class Video {
         string windowsName;
         VideoCapture cap;
         Mat frame;
+        
+        int width;
+        int height;
 
 
     public:
@@ -25,6 +28,6 @@ class Video {
         void updateFrame();
 
         string getWindowsName();
-        void setDefaultCalibration(int width, int height);
+        void setDefaultCalibration();
 };
 #endif

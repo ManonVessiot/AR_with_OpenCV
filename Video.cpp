@@ -6,7 +6,13 @@ Video::Video(){
 
 Video::Video(VideoCapture &_cap, string _windowsName){
     calibrated = false;
+
     cap = _cap;
+    cap.read(frame);
+
+    width = frame.cols;
+    height = frame.rows;
+
     windowsName = _windowsName;
     if(!cap.isOpened()){  // check if we succeeded
   	   cout << "erreur acces video" << endl << endl;
@@ -29,7 +35,7 @@ string Video::getWindowsName(){
     return windowsName;
 }
 
-void Video::setDefaultCalibration(int width, int height){
+void Video::setDefaultCalibration(){
     cameraMatrix = Mat::zeros(3, 3, CV_64F);
 
     cameraMatrix.at<double>(0, 0) = width;

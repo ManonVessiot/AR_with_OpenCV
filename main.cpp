@@ -1,6 +1,7 @@
 #include "Video.h"
 #include "CalibrationProcess.h"
 #include "main.h"
+#include "opengl.h"
 #include <thread>
 #include <X11/Xlib.h>   
 
@@ -215,6 +216,62 @@ void printManual(){
     // ./exc 2 calibration.txt 0 0.125
 }
 
+
+
+void draw(){
+    // TODO
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glPolygonMode(GL_BACK, GL_LINES);
+    //glCullFace(GL_BACK);
+
+    gluLookAt(9,9,10,0,0,0,0,0,1);
+
+    glPushMatrix();
+    
+    GLfloat Lposition2 [4] = {9.0, -9.0, 10.0, 1.0}; /* position “reelle” */
+    glLightfv (GL_LIGHT0, GL_POSITION, Lposition2);
+
+    GLfloat Lambiant [4] = {0.4, 0.4, 0.4, 1.0};
+    GLfloat Lblanche [4] = {1.0, 1.0, 1.0, 1.0};
+    glLightfv (GL_LIGHT0, GL_AMBIENT, Lambiant);
+    glLightfv (GL_LIGHT0, GL_DIFFUSE, Lblanche);
+    glLightfv (GL_LIGHT0, GL_SPECULAR, Lblanche);
+
+
+    glPopMatrix();
+
+    glBegin(GL_LINES);
+        //repere
+        //x(rouge)
+        glColor3f(1.0, 0.0, 0.0);
+        glVertex3d(0.0, 0.0, 0.0);
+        glVertex3d(0.0, 5.0, 0.0);
+        //y(vert)
+        glColor3f(0.0, 1.0, 0.0);
+        glVertex3d(0.0, 0.0, 0.0);
+        glVertex3d(5.0, 0.0, 0.0);
+        //z(bleu)
+        glColor3f(0.0, 0.0, 1.0);
+        glVertex3d(0.0, 0.0, 0.0);
+        glVertex3d(0.0, 0.0, 5.0);
+    glEnd();
+
+    glColor3f(1.0, 1.0, 1.0);
+
+    GLUquadric* quadric = gluNewQuadric();
+
+    gluQuadricDrawStyle(quadric, GLU_FILL );
+    gluSphere(quadric , 4 , 36 , 18 );
+
+
+    glutSwapBuffers();
+}
+
 int main( int argc, char **argv ){
     string windowsName = "Webcam";
 
@@ -243,13 +300,8 @@ int main( int argc, char **argv ){
             if (!cam.calibrated){
                 cout << "not calibrated" << endl;
 
-                frameLock.lock(); // Thread Lock
-                int width = cam.getFrame().cols;
-                int height = cam.getFrame().rows;
-                frameLock.unlock(); // Thread unLock
-
                 cout << "default calibration" << endl;
-                cam.setDefaultCalibration(width, height);
+                cam.setDefaultCalibration();
             }
 
             if (mode == 2){
@@ -304,6 +356,29 @@ int main( int argc, char **argv ){
                 return 0;
             }
         }
+    }
+    else if (argc >= 2 && atoi(argv[1]) == 3){
+        // TODO
+        glutInit(&argc, argv);
+        glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+
+        glutInitWindowSize(500, 500);
+        glutInitWindowPosition(100, 100);
+
+        glutCreateWindow("extrude test");
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_COLOR_MATERIAL);
+        glEnable(GL_LIGHTING);
+        glEnable(GL_LIGHT0);
+        glEnable(GL_NORMALIZE);
+
+        glMatrixMode( GL_PROJECTION );
+        glLoadIdentity();
+        gluPerspective(70,1,1,1000);
+        glutDisplayFunc(draw);
+        glutMainLoop();
+        return 0;
     }
     printManual();
     return -1;
